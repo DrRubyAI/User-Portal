@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DrRuby — Consumer Systems Biology · v2.1</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --white:#FFFFFF;--off:#F5F5F5;--ink:#1A1A1A;--mid:#6B6B6B;
+  --red:#C8102E;--border:#E5E5E5;
+  --green:#1F6B3A;--green-lt:rgba(31,107,58,0.08);
+  --amber:#B86A00;--amber-lt:rgba(184,106,0,0.08);
+  --purple:#5B3FA0;--purple-lt:rgba(91,63,160,0.07);
+  --serif:'Cormorant Garamond',serif;--sans:'Jost',sans-serif;
+}
+body{font-family:var(--sans);font-weight:300;color:var(--ink);background:var(--off);-webkit-font-smoothing:antialiased;font-size:13px;}
+
+/* SIDEBAR */
+.sidebar{position:fixed;top:0;left:0;width:210px;height:100vh;background:var(--ink);display:flex;flex-direction:column;padding:28px 0;z-index:100;overflow-y:auto;}
+.sb-logo{font-family:var(--serif);font-size:19px;color:white;padding:0 24px 24px;border-bottom:1px solid rgba(255,255,255,0.07);}
+.sb-logo span{color:var(--red);}
+.sb-tag{font-size:8px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:rgba(200,16,46,0.6);margin-top:4px;}
+.sb-nav{padding:16px 0;flex:1;}
+.sb-section{font-size:8px;font-weight:600;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.2);padding:12px 24px 6px;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 24px;font-size:11px;font-weight:400;letter-spacing:0.05em;color:rgba(255,255,255,0.35);cursor:pointer;transition:all 0.2s;border-left:2px solid transparent;}
+.sb-item:hover{color:rgba(255,255,255,0.7);}
+.sb-item.active{color:white;border-left-color:var(--red);background:rgba(200,16,46,0.07);}
+.sb-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.sb-item.active .sb-dot{background:var(--red);}
+.sb-badge{font-size:8px;font-weight:600;background:var(--red);color:white;padding:1px 5px;border-radius:2px;margin-left:auto;}
+.sb-user{padding:14px 24px;border-top:1px solid rgba(255,255,255,0.07);}
+.sb-name{font-size:12px;color:rgba(255,255,255,0.65);margin-bottom:2px;}
+.sb-email{font-size:9px;color:rgba(255,255,255,0.2);letter-spacing:0.05em;}
+
+/* MAIN */
+.main{margin-left:210px;}
+
+/* DATA SOURCES BAR */
+.sources-bar{background:var(--white);border-bottom:1px solid var(--border);padding:0 36px;height:44px;display:flex;align-items:center;gap:0;overflow-x:auto;}
+.src-label{font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid);margin-right:20px;white-space:nowrap;}
+.src-chip{display:flex;align-items:center;gap:6px;padding:6px 14px;border-right:1px solid var(--border);font-size:10px;font-weight:500;color:var(--ink);white-space:nowrap;cursor:pointer;transition:all 0.2s;}
+.src-chip:hover{background:var(--off);}
+.src-chip:first-of-type{border-left:1px solid var(--border);}
+.src-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.dot-on{background:var(--green);}
+.dot-off{background:var(--border);}
+.dot-fut{background:var(--purple);}
+.src-status{font-size:9px;color:var(--mid);}
+.src-status.on{color:var(--green);}
+.src-status.fut{color:var(--purple);}
+
+/* TOPBAR */
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 36px;height:50px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.tb-left{display:flex;flex-direction:column;}
+.tb-title{font-family:var(--serif);font-size:17px;color:var(--ink);line-height:1;}
+.tb-sub{font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--red);margin-top:2px;}
+.tb-right{display:flex;gap:10px;}
+.btn-ghost{font-size:10px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink);background:transparent;border:1px solid var(--border);padding:7px 14px;cursor:pointer;transition:all 0.2s;}
+.btn-ghost:hover{border-color:var(--red);color:var(--red);}
+.btn-red{font-size:10px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:white;background:var(--red);border:none;padding:7px 14px;cursor:pointer;}
+
+.page{padding:24px 36px;display:flex;flex-direction:column;gap:18px;}
+
+/* LAYER LABEL */
+.layer-label{display:flex;align-items:center;gap:12px;}
+.layer-tag{font-size:9px;font-weight:600;letter-spacing:0.28em;text-transform:uppercase;color:var(--mid);background:var(--border);padding:4px 10px;white-space:nowrap;}
+.layer-tag.on{background:var(--ink);color:white;}
+.layer-line{flex:1;height:1px;background:var(--border);}
+.layer-note{font-size:10px;color:var(--mid);white-space:nowrap;}
+
+/* HERO ROW */
+.hero-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+
+/* VELOCITY */
+.velocity-card{background:var(--ink);padding:28px;grid-column:span 2;}
+.vc-eyebrow{font-size:9px;font-weight:600;letter-spacing:0.28em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:14px;}
+.vc-main{display:flex;align-items:flex-end;gap:16px;margin-bottom:20px;}
+.vc-zone{font-family:var(--serif);font-size:44px;font-weight:300;color:white;line-height:1;}
+.vc-zone em{font-style:italic;color:#4CAF82;}
+.vc-arrow{font-size:13px;color:#4CAF82;font-weight:500;margin-bottom:6px;}
+.vc-sub{font-size:11px;color:rgba(255,255,255,0.4);line-height:1.7;max-width:380px;margin-bottom:18px;}
+.vc-zones{display:flex;border:1px solid rgba(255,255,255,0.08);}
+.zone-item{flex:1;padding:9px 12px;border-right:1px solid rgba(255,255,255,0.08);text-align:center;}
+.zone-item:last-child{border-right:none;}
+.zone-item.current{background:rgba(76,175,130,0.1);}
+.zone-name{font-size:8px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:3px;}
+.zone-item.fast .zone-name{color:var(--red);}
+.zone-item.stable .zone-name{color:rgba(255,255,255,0.3);}
+.zone-item.stable.current .zone-name{color:#4CAF82;}
+.zone-item.recovery .zone-name{color:#4CAF82;}
+.zone-desc{font-size:9px;color:rgba(255,255,255,0.25);line-height:1.4;}
+
+/* NARRATIVE */
+.narrative-card{background:var(--white);border:1px solid var(--border);padding:24px;display:flex;flex-direction:column;}
+.nc-tag{font-size:9px;font-weight:600;letter-spacing:0.25em;text-transform:uppercase;color:var(--red);display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.nc-tag::before{content:'';width:12px;height:1px;background:var(--red);display:block;}
+.nc-title{font-family:var(--serif);font-size:19px;color:var(--ink);margin-bottom:12px;line-height:1.15;}
+.nc-text{font-size:11px;color:var(--mid);line-height:1.8;flex:1;}
+.nc-text strong{color:var(--ink);font-weight:500;}
+.nc-footer{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);}
+.conf-badge{font-size:8px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:3px 7px;}
+.conf-high{background:var(--green-lt);color:var(--green);}
+.conf-est{background:var(--amber-lt);color:var(--amber);}
+.conf-fut{background:var(--purple-lt);color:var(--purple);}
+
+/* BODY TIMELINE */
+.timeline-card{background:var(--white);border:1px solid var(--border);padding:24px;}
+.tl-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.tl-title{font-family:var(--serif);font-size:19px;color:var(--ink);}
+.tl-months{display:flex;gap:0;margin-bottom:8px;}
+.tl-month{flex:1;font-size:9px;color:var(--mid);text-align:center;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.tl-month.now{color:var(--red);font-weight:600;border-bottom-color:var(--red);}
+.tl-track{margin-bottom:8px;}
+.tl-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.tl-name{font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--mid);width:80px;flex-shrink:0;}
+.tl-dots{display:flex;gap:3px;flex:1;}
+.tl-dot{flex:1;height:6px;border-radius:1px;}
+.tl-legend{display:flex;gap:16px;margin-top:10px;}
+.tl-leg-item{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--mid);}
+.tl-leg-dot{width:10px;height:6px;border-radius:1px;}
+
+/* RAW SIGNALS */
+.signals-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
+.signal-chip{background:var(--white);border:1px solid var(--border);padding:12px 10px;}
+.sig-label{font-size:8px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:var(--mid);margin-bottom:5px;}
+.sig-value{font-family:var(--serif);font-size:20px;font-weight:300;color:var(--ink);line-height:1;margin-bottom:2px;}
+.sig-unit{font-size:8px;color:var(--mid);}
+.sig-trend{font-size:9px;font-weight:500;margin-top:5px;}
+.up{color:var(--green);}
+.dn{color:var(--red);}
+.same{color:var(--mid);}
+.sig-source{font-size:8px;color:rgba(26,26,26,0.25);margin-top:3px;display:flex;align-items:center;gap:3px;}
+.src-d{width:5px;height:5px;border-radius:50%;display:inline-block;}
+
+/* SYSTEMS */
+.systems-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.system-card{background:var(--white);border:1px solid var(--border);border-left:3px solid var(--border);cursor:pointer;transition:border-left-color 0.2s;}
+.system-card:hover,.system-card.open{border-left-color:var(--red);}
+.sys-header{padding:16px 16px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.sys-name{font-family:var(--serif);font-size:18px;font-weight:300;color:var(--ink);margin-bottom:3px;}
+.sys-trend{font-size:10px;font-weight:500;}
+.sys-conf{font-size:8px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:2px 7px;flex-shrink:0;margin-top:2px;}
+.sys-pills{padding:10px 16px;display:flex;flex-wrap:wrap;gap:4px;}
+.sig-pill{font-size:9px;color:var(--mid);border:1px solid var(--border);padding:2px 7px;}
+.sig-pill.new{border-color:rgba(91,63,160,0.3);color:var(--purple);}
+.drill-toggle{font-size:9px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid);padding:9px 16px;border-top:1px solid var(--border);cursor:pointer;display:flex;justify-content:space-between;}
+.drill-toggle:hover{color:var(--red);}
+.sys-drilldown{border-top:1px solid var(--border);padding:12px 16px;display:none;}
+.system-card.open .sys-drilldown{display:block;}
+.drill-table{width:100%;border-collapse:collapse;}
+.drill-table th{font-size:8px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--mid);text-align:left;padding:5px 6px;border-bottom:1px solid var(--border);}
+.drill-table td{font-size:10px;color:var(--mid);padding:6px 6px;border-bottom:1px solid rgba(26,26,26,0.04);line-height:1.4;}
+.drill-table td:first-child{color:var(--ink);}
+.imp-neg{color:var(--red);font-weight:500;}
+.imp-pos{color:var(--green);font-weight:500;}
+.sys-card-hormone{border-left-color:var(--purple)!important;}
+
+/* BOTTOM GRID */
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+
+/* PROTOCOL */
+.protocol-card{background:var(--white);border:1px solid var(--border);}
+.pc-header{padding:18px 18px 0;}
+.pc-tag{font-size:9px;font-weight:600;letter-spacing:0.25em;text-transform:uppercase;color:var(--red);display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.pc-tag::before{content:'';width:12px;height:1px;background:var(--red);display:block;}
+.pc-title{font-family:var(--serif);font-size:18px;color:var(--ink);margin-bottom:3px;}
+.pc-sub{font-size:10px;color:var(--mid);margin-bottom:14px;}
+.pc-item{padding:12px 18px;border-top:1px solid var(--border);}
+.pc-because{font-size:10px;color:var(--mid);margin-bottom:6px;line-height:1.6;}
+.pc-because strong{color:var(--ink);font-weight:500;}
+.pc-therefore{font-size:11px;color:var(--ink);padding:7px 10px;background:var(--off);border-left:2px solid var(--red);margin-bottom:5px;line-height:1.5;}
+.pc-evidence{font-size:9px;color:var(--mid);font-style:italic;}
+.pc-footer{padding:10px 18px;border-top:1px solid var(--border);background:var(--off);font-size:9px;color:var(--mid);}
+
+/* EXPERIMENT ENGINE */
+.exp-card{background:var(--white);border:1px solid var(--border);}
+.exp-header{padding:18px 18px 0;}
+.exp-tag{font-size:9px;font-weight:600;letter-spacing:0.25em;text-transform:uppercase;color:var(--purple);display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.exp-tag::before{content:'';width:12px;height:1px;background:var(--purple);display:block;}
+.exp-title{font-family:var(--serif);font-size:18px;color:var(--ink);margin-bottom:14px;}
+.exp-item{padding:12px 18px;border-top:1px solid var(--border);}
+.exp-name{font-size:11px;font-weight:500;color:var(--ink);margin-bottom:3px;}
+.exp-days{font-size:9px;color:var(--mid);margin-bottom:8px;letter-spacing:0.06em;}
+.exp-outcomes{display:flex;flex-direction:column;gap:3px;}
+.exp-out{display:flex;justify-content:space-between;align-items:center;font-size:10px;}
+.exp-out-label{color:var(--mid);}
+.exp-out-val{font-weight:600;}
+.exp-add{padding:12px 18px;border-top:1px solid var(--border);font-size:10px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:var(--mid);cursor:pointer;display:flex;justify-content:space-between;}
+.exp-add:hover{color:var(--purple);}
+
+/* TRAJECTORY */
+.traj-card{background:var(--white);border:1px solid var(--border);padding:20px;}
+.card-tag{font-size:9px;font-weight:600;letter-spacing:0.25em;text-transform:uppercase;color:var(--red);display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.card-tag::before{content:'';width:12px;height:1px;background:var(--red);display:block;}
+.traj-title{font-family:var(--serif);font-size:18px;color:var(--ink);margin-bottom:16px;}
+.traj-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.traj-item:last-child{border-bottom:none;}
+.traj-name{font-size:10px;color:var(--ink);width:120px;flex-shrink:0;}
+.traj-bar-wrap{flex:1;height:3px;background:var(--border);position:relative;}
+.traj-bar{height:100%;position:absolute;left:0;}
+.traj-pct{font-size:10px;font-weight:600;width:44px;text-align:right;}
+.traj-dir{font-size:9px;width:70px;text-align:right;}
+
+/* UPDATE */
+.update-card{background:var(--off);border:1px solid var(--border);padding:20px;}
+.upd-alert{font-size:9px;font-weight:600;color:var(--red);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:5px;}
+.upd-rdot{width:5px;height:5px;border-radius:50%;background:var(--red);}
+.upd-item{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--mid);padding:4px 0;}
+.upd-check{width:13px;height:13px;border:1px solid var(--border);background:var(--white);display:flex;align-items:center;justify-content:center;font-size:7px;flex-shrink:0;}
+.upd-check.done{background:var(--ink);color:white;border-color:var(--ink);}
+.upd-btn{width:100%;font-size:9px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:white;background:var(--ink);border:none;padding:12px;cursor:pointer;margin-top:12px;transition:background 0.2s;}
+.upd-btn:hover{background:var(--red);}
+
+/* FUTURE LAYER */
+.future-bar{background:var(--purple-lt);border:1px solid rgba(91,63,160,0.15);padding:14px 20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.fut-label{font-size:9px;font-weight:600;letter-spacing:0.25em;text-transform:uppercase;color:var(--purple);white-space:nowrap;}
+.fut-chip{font-size:10px;color:var(--purple);border:1px solid rgba(91,63,160,0.2);padding:4px 12px;opacity:0.7;}
+.fut-chip.coming{opacity:1;font-weight:500;}
+
+/* ROUND 2: FRESHNESS */
+.src-fresh{font-size:8px;color:var(--mid);margin-left:4px;font-style:italic;}
+.src-fresh.stale{color:var(--amber);font-weight:500;}
+.sig-fresh{font-size:8px;margin-top:2px;}
+.sig-fresh.ok{color:rgba(26,26,26,0.3);}
+.sig-fresh.stale{color:var(--amber);font-weight:500;}
+
+/* ROUND 2: ALT EXPLAIN */
+.nc-alt{margin-top:10px;padding:10px 12px;background:var(--off);border-left:2px solid var(--border);font-size:10px;color:var(--mid);line-height:1.7;}
+.nc-alt strong{color:var(--ink);font-weight:500;display:block;margin-bottom:4px;}
+.nc-alt-items{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.nc-alt-item{font-size:9px;background:var(--white);border:1px solid var(--border);padding:2px 8px;color:var(--ink);}
+.nc-more-data{font-size:9px;color:var(--amber);margin-top:6px;font-style:italic;}
+
+/* ROUND 2: CONFIDENCE PCT */
+.sys-conf-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px;}
+.sys-conf-pct{font-size:9px;color:var(--mid);text-align:right;}
+.sys-conf-pct span{font-weight:600;color:var(--ink);}
+
+/* ROUND 2: WHAT IMPROVED */
+.traj-item{cursor:pointer;}
+.traj-item:hover .traj-what{display:block;}
+.traj-what{display:none;font-size:9px;color:var(--mid);padding:6px 0 4px;border-top:1px solid var(--border);line-height:1.6;grid-column:1/-1;}
+.traj-what-trigger{font-size:9px;color:var(--mid);cursor:pointer;letter-spacing:0.05em;padding-left:2px;}
+.traj-what-trigger:hover{color:var(--red);}
+.traj-expand{background:none;border:none;font-size:8px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid);cursor:pointer;padding:0;margin-top:3px;}
+.traj-expand:hover{color:var(--red);}
+.traj-breakdown{display:none;font-size:9px;color:var(--mid);padding:6px 0 2px;line-height:1.8;border-top:1px dashed var(--border);margin-top:4px;}
+.traj-breakdown .pos{color:var(--green);font-weight:500;}
+.traj-breakdown .neg{color:var(--red);font-weight:500;}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-logo">Dr<span>Ruby</span>.ai<div class="sb-tag">Consumer Systems Biology</div></div>
+  <nav class="sb-nav">
+    <div class="sb-section">Core</div>
+    <div class="sb-item active"><div class="sb-dot"></div>Dashboard</div>
+    <div class="sb-item"><div class="sb-dot"></div>Aging Velocity</div>
+    <div class="sb-item"><div class="sb-dot"></div>Body Timeline</div>
+    <div class="sb-section">Data</div>
+    <div class="sb-item"><div class="sb-dot"></div>Skin Scan<div class="sb-badge">New</div></div>
+    <div class="sb-item"><div class="sb-dot"></div>Raw Signals</div>
+    <div class="sb-item"><div class="sb-dot"></div>Data Sources</div>
+    <div class="sb-section">Intelligence</div>
+    <div class="sb-item"><div class="sb-dot"></div>My Protocol</div>
+    <div class="sb-item"><div class="sb-dot"></div>Experiments</div>
+    <div class="sb-item"><div class="sb-dot"></div>Hormone Layer</div>
+    <div class="sb-section">Profile</div>
+    <div class="sb-item"><div class="sb-dot"></div>Health Profile</div>
+    <div class="sb-item"><div class="sb-dot"></div>Supplements</div>
+  </nav>
+  <div class="sb-user">
+    <div class="sb-name">Ruby Sun</div>
+    <div class="sb-email">ruby@drruby.ai</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- DATA SOURCES BAR -->
+  <div class="sources-bar">
+    <div class="src-label">Data Sources</div>
+    <div class="src-chip"><div class="src-dot dot-on"></div>Skin Scan<span class="src-status on">· Connected</span><span class="src-fresh">2 days ago</span></div>
+    <div class="src-chip"><div class="src-dot dot-on"></div>Apple Health<span class="src-status on">· Connected</span><span class="src-fresh">Today</span></div>
+    <div class="src-chip"><div class="src-dot dot-off"></div>Oura Ring<span class="src-status">· Connect</span></div>
+    <div class="src-chip"><div class="src-dot dot-off"></div>WHOOP<span class="src-status">· Connect</span></div>
+    <div class="src-chip"><div class="src-dot dot-off"></div>Garmin<span class="src-status">· Connect</span></div>
+    <div class="src-chip"><div class="src-dot dot-fut"></div>CGM<span class="src-status fut">· Coming v3</span></div>
+    <div class="src-chip"><div class="src-dot dot-fut"></div>Voice<span class="src-status fut">· Coming v3</span></div>
+  </div>
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-title">Personal Longevity OS</div>
+      <div class="tb-sub">Consumer Systems Biology · May 25, 2026</div>
+    </div>
+    <div class="tb-right">
+      <button class="btn-ghost">↻ Update Profile</button>
+      <button class="btn-red">+ New Scan</button>
+    </div>
+  </div>
+
+  <div class="page">
+
+    <!-- ── LAYER 3: AGING TRAJECTORY ── -->
+    <div class="layer-label">
+      <div class="layer-tag on">Layer 3 — Aging Trajectory</div>
+      <div class="layer-line"></div>
+      <div class="layer-note">Your body timeline · longitudinal · 90-day view</div>
+    </div>
+
+    <div class="hero-row">
+      <div class="velocity-card">
+        <div class="vc-eyebrow">Aging Velocity · 90-day trend · Multimodal inference</div>
+        <div class="vc-main">
+          <div class="vc-zone"><em>Stable</em> Zone</div>
+          <div class="vc-arrow">↓ Slowing · Good trajectory</div>
+        </div>
+        <div class="vc-sub">Biological aging rate has slowed over 90 days. Skin longevity and recovery improving. Metabolic resilience and inflammation remain primary opportunities.</div>
+        <div class="vc-zones">
+          <div class="zone-item fast"><div class="zone-name">Fast Aging</div><div class="zone-desc">Accelerating faster than chronological age</div></div>
+          <div class="zone-item stable current"><div class="zone-name">◉ Stable Zone</div><div class="zone-desc">Aging at controlled pace · You are here</div></div>
+          <div class="zone-item recovery"><div class="zone-name">Recovery Zone</div><div class="zone-desc">Biological aging slower than chronological</div></div>
+        </div>
+      </div>
+
+      <div class="narrative-card">
+        <div class="nc-tag">Health Narrative</div>
+        <div class="nc-title">What your body is telling you this month</div>
+        <div class="nc-text">
+          Your <strong>skin inflammation increased 12%</strong> over 14 days while recovery metrics improved. This pattern is more commonly associated with an external transient stressor rather than systemic aging. Your <strong>HRV from Apple Health supports</strong> mild physiological stress load this week.<br><br>
+          <strong>Collagen proxy is stable</strong>. Pigmentation actively fading. Positive trajectory on skin longevity despite the inflammatory signal.
+        </div>
+        <div class="nc-alt">
+          <strong>This pattern is more commonly associated with:</strong>
+          <div class="nc-alt-items">
+            <div class="nc-alt-item">dietary inflammation</div>
+            <div class="nc-alt-item">environmental stress</div>
+            <div class="nc-alt-item">sleep disruption</div>
+            <div class="nc-alt-item">luteal phase hormones</div>
+          </div>
+          <div class="nc-more-data">CGM or Oura integration would improve inference confidence for this pattern.</div>
+        </div>
+        <div class="nc-footer">
+          <span class="conf-badge conf-high">High · Skin scan</span>
+          <span class="conf-badge conf-high">High · Apple Health</span>
+          <span class="conf-badge conf-est">Est · Self-report</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- BODY TIMELINE -->
+    <div class="timeline-card">
+      <div class="tl-header">
+        <div class="tl-title" style="font-family:var(--serif);font-size:19px;color:var(--ink);">Body Timeline — 6 months</div>
+        <div style="font-size:9px;color:var(--mid);letter-spacing:0.1em;">Your longitudinal data record · Every scan, every signal</div>
+      </div>
+      <div class="tl-months" id="tl-months"></div>
+      <div class="tl-track" id="tl-track"></div>
+      <div class="tl-legend">
+        <div class="tl-leg-item"><div class="tl-leg-dot" style="background:var(--red)"></div>Worsening</div>
+        <div class="tl-leg-item"><div class="tl-leg-dot" style="background:#E5E5E5"></div>Stable</div>
+        <div class="tl-leg-item"><div class="tl-leg-dot" style="background:var(--green)"></div>Improving</div>
+        <div class="tl-leg-item"><div class="tl-leg-dot" style="background:var(--purple);opacity:0.4"></div>No data</div>
+      </div>
+    </div>
+
+    <!-- ── LAYER 1: RAW SIGNALS ── -->
+    <div class="layer-label">
+      <div class="layer-tag">Layer 1 — Raw Signals</div>
+      <div class="layer-line"></div>
+      <div class="layer-note">What DrRuby actually measured · AI is not guessing</div>
+    </div>
+
+    <div class="signals-grid">
+      <div class="signal-chip">
+        <div class="sig-label">Facial Redness</div>
+        <div class="sig-value">6.2<span style="font-size:11px"> a*</span></div>
+        <div class="sig-trend dn">↑ +18% · 30d</div>
+        <div class="sig-source"><span class="src-d" style="background:var(--green)"></span>Skin scan</div>
+        <div class="sig-fresh ok">2 days ago</div>
+      </div>
+      <div class="signal-chip">
+        <div class="sig-label">Collagen Proxy</div>
+        <div class="sig-value">74<span style="font-size:11px">/100</span></div>
+        <div class="sig-trend same">→ stable · 30d</div>
+        <div class="sig-source"><span class="src-d" style="background:var(--green)"></span>Skin scan</div>
+        <div class="sig-fresh ok">2 days ago</div>
+      </div>
+      <div class="signal-chip">
+        <div class="sig-label">Pigmentation</div>
+        <div class="sig-value">−6<span style="font-size:11px">%</span></div>
+        <div class="sig-trend up">↓ fading · good</div>
+        <div class="sig-source"><span class="src-d" style="background:var(--green)"></span>Skin scan</div>
+        <div class="sig-fresh ok">2 days ago</div>
+      </div>
+      <div class="signal-chip">
+        <div class="sig-label">HRV</div>
+        <div class="sig-value">52<span style="font-size:11px">ms</span></div>
+        <div class="sig-trend dn">↓ −6ms · 7d</div>
+        <div class="sig-source"><span class="src-d" style="background:var(--green)"></span>Apple Health</div>
+        <div class="sig-fresh ok">Today</div>
+      </div>
+      <div class="signal-chip">
+        <div class="sig-label">Sleep Duration</div>
+        <div class="sig-value">7.2<span style="font-size:11px">hr</span></div>
+        <div class="sig-trend up">↑ +0.4hr · 14d</div>
+        <div class="sig-source"><span class="src-d" style="background:var(--green)"></span>Apple Health</div>
+        <div class="sig-fresh ok">Today</div>
+      </div>
+      <div class="signal-chip">
+        <div class="sig-label">Resting HR</div>
+        <div class="sig-value">61<span style="font-size:11px">bpm</span></div>
+        <div class="sig-trend same">→ stable</div>
+        <div class="sig-source"><span class="src-d" style="background:var(--green)"></span>Apple Health</div>
+        <div class="sig-fresh ok">Today</div>
+      </div>
+      <div class="signal-chip" style="border-color:rgba(91,63,160,0.2);background:var(--purple-lt);">
+        <div class="sig-label" style="color:var(--purple);">Hormone Phase</div>
+        <div class="sig-value" style="font-size:14px;color:var(--purple);">Luteal</div>
+        <div class="sig-trend" style="color:var(--purple);font-size:9px;">Day 22 · cycle</div>
+        <div class="sig-source"><span class="src-d" style="background:var(--purple)"></span>Self-report</div>
+        <div class="sig-fresh stale">⚠ 28 days old</div>
+      </div>
+    </div>
+
+    <!-- ── LAYER 2: BIOLOGICAL SYSTEMS ── -->
+    <div class="layer-label">
+      <div class="layer-tag">Layer 2 — Biological Systems</div>
+      <div class="layer-line"></div>
+      <div class="layer-note">Click any system to expand signal breakdown</div>
+    </div>
+
+    <div class="systems-grid">
+
+      <!-- METABOLIC -->
+      <div class="system-card" onclick="toggleDrill(this)">
+        <div class="sys-header">
+          <div><div class="sys-name">Metabolic Resilience</div><div class="sys-trend dn">↓ variability +18% · 14d · needs attention</div></div>
+          <div class="sys-conf-wrap"><div class="sys-conf conf-est">Estimated</div><div class="sys-conf-pct">Confidence <span>42%</span></div><div style="font-size:8px;color:var(--amber);text-align:right;">No CGM · no wearable</div></div>
+        </div>
+        <div class="sys-pills">
+          <div class="sig-pill">Post-meal variability</div><div class="sig-pill">Energy stability</div><div class="sig-pill">Hunger signals</div>
+        </div>
+        <div class="drill-toggle"><span>Signal breakdown</span><span>↓</span></div>
+        <div class="sys-drilldown">
+          <table class="drill-table">
+            <tr><th>Signal</th><th>Status</th><th>Impact</th></tr>
+            <tr><td>Post-meal energy drop</td><td>Elevated</td><td class="imp-neg">−12 pts</td></tr>
+            <tr><td>Energy variability</td><td>High</td><td class="imp-neg">−9 pts</td></tr>
+            <tr><td>Hunger irregularity</td><td>Moderate</td><td class="imp-neg">−6 pts</td></tr>
+            <tr><td>Sleep-metabolism link</td><td>Improving</td><td class="imp-pos">+4 pts</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- INFLAMMATION -->
+      <div class="system-card" onclick="toggleDrill(this)">
+        <div class="sys-header">
+          <div><div class="sys-name">Inflammation & Stress</div><div class="sys-trend dn">↑ redness +18% · 30d · monitor</div></div>
+          <div class="sys-conf-wrap"><div class="sys-conf conf-high">High · scan</div><div class="sys-conf-pct">Confidence <span>78%</span></div></div>
+        </div>
+        <div class="sys-pills">
+          <div class="sig-pill">Facial redness (a*)</div><div class="sig-pill">Erythema area</div><div class="sig-pill">HRV stress proxy</div>
+        </div>
+        <div class="drill-toggle"><span>Signal breakdown</span><span>↓</span></div>
+        <div class="sys-drilldown">
+          <table class="drill-table">
+            <tr><th>Signal</th><th>Status</th><th>Impact</th></tr>
+            <tr><td>Facial redness (a* channel)</td><td>+18% elevated</td><td class="imp-neg">−18 pts</td></tr>
+            <tr><td>HRV drop (Apple Health)</td><td>−6ms · 7d</td><td class="imp-neg">−8 pts</td></tr>
+            <tr><td>Sleep debt</td><td>Mild, improving</td><td class="imp-neg">−6 pts</td></tr>
+            <tr><td>Hydration (self-report)</td><td>Low</td><td class="imp-neg">−5 pts</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- SKIN LONGEVITY -->
+      <div class="system-card" onclick="toggleDrill(this)">
+        <div class="sys-header">
+          <div><div class="sys-name">Skin Longevity</div><div class="sys-trend up">↑ pigment fading · collagen stable · good</div></div>
+          <div class="sys-conf-wrap"><div class="sys-conf conf-high">High · scan</div><div class="sys-conf-pct">Confidence <span>82%</span></div></div>
+        </div>
+        <div class="sys-pills">
+          <div class="sig-pill">Collagen proxy</div><div class="sig-pill">Pigmentation kinetics</div><div class="sig-pill">Barrier integrity</div><div class="sig-pill">Wrinkle velocity</div>
+        </div>
+        <div class="drill-toggle"><span>Signal breakdown</span><span>↓</span></div>
+        <div class="sys-drilldown">
+          <table class="drill-table">
+            <tr><th>Signal</th><th>Status</th><th>Impact</th></tr>
+            <tr><td>Collagen proxy (CP texture)</td><td>Stable</td><td class="imp-pos">0 pts</td></tr>
+            <tr><td>Pigmentation load</td><td>Fading −6%</td><td class="imp-pos">+8 pts</td></tr>
+            <tr><td>Barrier integrity</td><td>Good</td><td class="imp-pos">+6 pts</td></tr>
+            <tr><td>Wrinkle velocity</td><td>Slow</td><td class="imp-pos">+4 pts</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- RECOVERY -->
+      <div class="system-card" onclick="toggleDrill(this)">
+        <div class="sys-header">
+          <div><div class="sys-name">Recovery & Sleep</div><div class="sys-trend up">↑ sleep +0.4hr · 14d · improving</div></div>
+          <div class="sys-conf-wrap"><div class="sys-conf conf-high">High · Apple Health</div><div class="sys-conf-pct">Confidence <span>74%</span></div></div>
+        </div>
+        <div class="sys-pills">
+          <div class="sig-pill">Sleep duration</div><div class="sig-pill">Sleep regularity</div><div class="sig-pill">Resting HR</div><div class="sig-pill">HRV trend</div>
+        </div>
+        <div class="drill-toggle"><span>Signal breakdown</span><span>↓</span></div>
+        <div class="sys-drilldown">
+          <table class="drill-table">
+            <tr><th>Signal</th><th>Status</th><th>Impact</th></tr>
+            <tr><td>Sleep duration (Apple Health)</td><td>7.2h · improving</td><td class="imp-pos">+10 pts</td></tr>
+            <tr><td>Resting HR</td><td>61bpm · stable</td><td class="imp-pos">+5 pts</td></tr>
+            <tr><td>HRV 7-day trend</td><td>Mild drop</td><td class="imp-neg">−6 pts</td></tr>
+            <tr><td>Sleep regularity</td><td>Moderate</td><td class="imp-neg">−4 pts</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- MOVEMENT -->
+      <div class="system-card" onclick="toggleDrill(this)">
+        <div class="sys-header">
+          <div><div class="sys-name">Movement Capacity</div><div class="sys-trend same">→ stable · 7.4k steps avg</div></div>
+          <div class="sys-conf-wrap"><div class="sys-conf conf-high">High · Apple Health</div><div class="sys-conf-pct">Confidence <span>71%</span></div></div>
+        </div>
+        <div class="sys-pills">
+          <div class="sig-pill">Daily steps</div><div class="sig-pill">Active minutes</div><div class="sig-pill">Sedentary time</div>
+        </div>
+        <div class="drill-toggle"><span>Signal breakdown</span><span>↓</span></div>
+        <div class="sys-drilldown">
+          <table class="drill-table">
+            <tr><th>Signal</th><th>Status</th><th>Impact</th></tr>
+            <tr><td>Daily steps (Apple Health)</td><td>7.4k avg</td><td class="imp-pos">+8 pts</td></tr>
+            <tr><td>Active minutes</td><td>28 min/day</td><td class="imp-pos">+5 pts</td></tr>
+            <tr><td>Sedentary hours</td><td>8.2h avg</td><td class="imp-neg">−8 pts</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- HORMONE LAYER -->
+      <div class="system-card sys-card-hormone" onclick="toggleDrill(this)">
+        <div class="sys-header">
+          <div><div class="sys-name" style="color:var(--purple);">Hormone & Cycle</div><div class="sys-trend" style="color:var(--purple);font-size:10px;">Luteal phase · Day 22 · elevated inflammation expected</div></div>
+          <div class="sys-conf-wrap"><div class="sys-conf" style="background:var(--purple-lt);color:var(--purple);font-size:8px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:2px 7px;">Self-report</div><div class="sys-conf-pct">Confidence <span>55%</span></div><div style="font-size:8px;color:var(--amber);text-align:right;">⚠ 28 days old</div></div>
+        </div>
+        <div class="sys-pills">
+          <div class="sig-pill new">Cycle phase</div><div class="sig-pill new">Hormone proxy</div><div class="sig-pill new">Skin-hormone link</div><div class="sig-pill new">Peri-menopause tracker</div>
+        </div>
+        <div class="drill-toggle" style="color:var(--purple);"><span>Signal breakdown</span><span>↓</span></div>
+        <div class="sys-drilldown">
+          <table class="drill-table">
+            <tr><th>Signal</th><th>Status</th><th>Skin Impact</th></tr>
+            <tr><td>Cycle phase</td><td>Luteal · Day 22</td><td class="imp-neg">Inflammation ↑ expected</td></tr>
+            <tr><td>Estrogen proxy</td><td>Declining phase</td><td class="imp-neg">Collagen synthesis ↓</td></tr>
+            <tr><td>Progesterone effect</td><td>Elevated</td><td class="imp-neg">Sebum ↑ possible</td></tr>
+            <tr><td>Sleep quality link</td><td>Moderate disruption</td><td class="imp-neg">Recovery ↓</td></tr>
+          </table>
+          <div style="font-size:9px;color:var(--purple);margin-top:8px;font-style:italic;">Note: Your elevated inflammation score this week is consistent with luteal phase hormonal patterns. This is physiological, not pathological.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── BOTTOM GRID ── -->
+    <div class="bottom-grid">
+
+      <!-- PROTOCOL -->
+      <div class="protocol-card">
+        <div class="pc-header">
+          <div class="pc-tag">AI Protocol · Because → Therefore</div>
+          <div class="pc-title">Intervention Logic</div>
+          <div class="pc-sub">Scan + wearable + health profile · May 25</div>
+        </div>
+        <div class="pc-item">
+          <div class="pc-because"><strong>Because:</strong> Post-meal energy variability +18% over 14 days. Facial redness elevated. HRV mildly dropped. Pattern suggests diet-inflammation link.</div>
+          <div class="pc-therefore">→ 10-minute walk after meals may improve glucose recovery kinetics and reduce downstream inflammatory signal visible in your skin scan.</div>
+          <div class="pc-evidence">Evidence: post-prandial glucose variability · skin inflammation cascade · your Apple Health activity data</div>
+        </div>
+        <div class="pc-item">
+          <div class="pc-because"><strong>Because:</strong> You take Vitamin D (health profile) but inflammation has not improved in 30 days. Luteal phase also elevates inflammatory baseline.</div>
+          <div class="pc-therefore">→ Consider evaluating Magnesium Glycinate (200–400mg). Magnesium is a known co-factor in Vitamin D metabolism — some users with similar patterns may benefit from this combination. Re-scan in 30 days after luteal phase to isolate any effect.</div>
+          <div class="pc-evidence">Evidence: Magnesium–D3 co-factor research · hormone-inflammation interaction · your supplement profile</div>
+        </div>
+        <div class="pc-item">
+          <div class="pc-because"><strong>Because:</strong> Pigmentation actively fading (−6%). Diet is plant-based (health profile). Collagen proxy stable but not improving.</div>
+          <div class="pc-therefore">→ Vitamin C is a well-established co-factor in collagen synthesis. Plant-based dietary patterns may provide less dietary C in collagen-relevant forms — evaluating 500mg supplementation may be worth tracking as an experiment.</div>
+          <div class="pc-evidence">Evidence: collagen synthesis pathway · your dietary profile · pigmentation trend</div>
+        </div>
+        <div class="pc-footer">DrRuby AI · Physiological pattern recognition · Not medical diagnosis · Update profile to improve accuracy</div>
+      </div>
+
+      <!-- EXPERIMENT ENGINE -->
+      <div class="exp-card">
+        <div class="exp-header">
+          <div class="exp-tag">Personal Experiment Engine</div>
+          <div class="exp-title">Is what you're taking working?</div>
+        </div>
+        <div class="exp-item">
+          <div class="exp-name">Magnesium Glycinate · 300mg</div>
+          <div class="exp-days">Started Apr 10 · 45 days · ongoing</div>
+          <div class="exp-outcomes">
+            <div class="exp-out"><span class="exp-out-label">Recovery score</span><span class="exp-out-val up">+11% ↑</span></div>
+            <div class="exp-out"><span class="exp-out-label">Sleep regularity</span><span class="exp-out-val up">Improving ↑</span></div>
+            <div class="exp-out"><span class="exp-out-label">Skin barrier</span><span class="exp-out-val same">Stable →</span></div>
+          </div>
+        </div>
+        <div class="exp-item">
+          <div class="exp-name">Vitamin D3 · 2000 IU</div>
+          <div class="exp-days">Started Mar 1 · 85 days · ongoing</div>
+          <div class="exp-outcomes">
+            <div class="exp-out"><span class="exp-out-label">Inflammation score</span><span class="exp-out-val dn">No change →</span></div>
+            <div class="exp-out"><span class="exp-out-label">Energy levels</span><span class="exp-out-val up">Slight ↑</span></div>
+            <div class="exp-out"><span class="exp-out-label">Skin redness</span><span class="exp-out-val dn">Still elevated</span></div>
+          </div>
+        </div>
+        <div class="exp-item">
+          <div class="exp-name">Topical Retinol · 0.3%</div>
+          <div class="exp-days">Started May 1 · 24 days · early stage</div>
+          <div class="exp-outcomes">
+            <div class="exp-out"><span class="exp-out-label">Collagen proxy</span><span class="exp-out-val same">Monitoring → </span></div>
+            <div class="exp-out"><span class="exp-out-label">Wrinkle velocity</span><span class="exp-out-val same">Too early to measure</span></div>
+          </div>
+        </div>
+        <div class="exp-add"><span>+ Add supplement or protocol</span><span>→</span></div>
+      </div>
+
+      <!-- TRAJECTORY + UPDATE -->
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="traj-card">
+          <div class="card-tag">90-Day Aging Velocity</div>
+          <div class="traj-title">System trajectories</div>
+          <div class="traj-item">
+            <div class="traj-name">Metabolic</div>
+            <div class="traj-bar-wrap"><div class="traj-bar" style="width:58%;background:var(--amber)"></div></div>
+            <div class="traj-pct" style="color:var(--amber)">−5%</div>
+            <div class="traj-dir dn">Worsening</div>
+          </div>
+          <div class="traj-item">
+            <div class="traj-name">Inflammation</div>
+            <div class="traj-bar-wrap"><div class="traj-bar" style="width:54%;background:var(--red)"></div></div>
+            <div class="traj-pct" style="color:var(--red)">−8%</div>
+            <div class="traj-dir dn">Worsening</div>
+          </div>
+          <div class="traj-item" style="flex-wrap:wrap;" onclick="toggleTraj(this)">
+            <div class="traj-name">Skin Longevity</div>
+            <div class="traj-bar-wrap"><div class="traj-bar" style="width:79%;background:var(--green)"></div></div>
+            <div class="traj-pct" style="color:var(--green)">+6%</div>
+            <div class="traj-dir up" style="cursor:pointer;" title="Click to see what drove this">Improving ▾</div>
+            <div class="traj-breakdown" style="width:100%;">
+              <span class="pos">+8pts</span> pigmentation fading (skin scan) ·
+              <span class="pos">+6pts</span> barrier integrity stable ·
+              <span class="pos">+4pts</span> wrinkle velocity slow ·
+              <span class="neg">−2pts</span> elevated redness still present
+            </div>
+          </div>
+          <div class="traj-item" style="flex-wrap:wrap;" onclick="toggleTraj(this)">
+            <div class="traj-name">Recovery</div>
+            <div class="traj-bar-wrap"><div class="traj-bar" style="width:74%;background:var(--green)"></div></div>
+            <div class="traj-pct" style="color:var(--green)">+4%</div>
+            <div class="traj-dir up" style="cursor:pointer;" title="Click to see what drove this">Improving ▾</div>
+            <div class="traj-breakdown" style="width:100%;">
+              <span class="pos">+6pts</span> sleep duration +0.4hr (Apple Health) ·
+              <span class="pos">+4pts</span> resting HR stable ·
+              <span class="neg">−6pts</span> HRV mild drop ·
+              <span class="neg">−4pts</span> sleep regularity moderate
+            </div>
+          </div>
+          <div class="traj-item">
+            <div class="traj-name">Movement</div>
+            <div class="traj-bar-wrap"><div class="traj-bar" style="width:71%;background:var(--mid)"></div></div>
+            <div class="traj-pct" style="color:var(--mid)">0%</div>
+            <div class="traj-dir same">Stable</div>
+          </div>
+          <div class="traj-item">
+            <div class="traj-name">Hormone</div>
+            <div class="traj-bar-wrap"><div class="traj-bar" style="width:65%;background:var(--purple)"></div></div>
+            <div class="traj-pct" style="color:var(--purple)">Tracking</div>
+            <div class="traj-dir" style="color:var(--purple)">New</div>
+          </div>
+        </div>
+
+        <div class="update-card">
+          <div class="upd-alert"><div class="upd-rdot"></div>Profile 28 days old</div>
+          <div class="upd-item"><div class="upd-check done">✓</div>Supplements & medications</div>
+          <div class="upd-item"><div class="upd-check done">✓</div>Diet & lifestyle</div>
+          <div class="upd-item"><div class="upd-check done">✓</div>Hormone / cycle data</div>
+          <div class="upd-item"><div class="upd-check"></div>Recent lab results</div>
+          <div class="upd-item"><div class="upd-check"></div>Stress changes this month</div>
+          <button class="upd-btn">Update Health Profile →</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FUTURE DATA LAYER -->
+    <div class="future-bar">
+      <div class="fut-label">Coming in v3</div>
+      <div class="fut-chip coming">CGM · Glucose stream</div>
+      <div class="fut-chip coming">Skin Glycation Proxy™</div>
+      <div class="fut-chip">Voice Stress Layer</div>
+      <div class="fut-chip">Full Lab Integration</div>
+      <div class="fut-chip">Oura Deep Sleep</div>
+      <div style="margin-left:auto;font-size:9px;color:var(--purple);font-style:italic;">Image + wearable + outcome data = moat</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function toggleDrill(card){
+  card.classList.toggle('open');
+  const arrow = card.querySelector('.drill-toggle span:last-child');
+  arrow.textContent = card.classList.contains('open') ? '↑' : '↓';
+}
+
+function toggleTraj(item){
+  const bd = item.querySelector('.traj-breakdown');
+  if(!bd) return;
+  const open = bd.style.display === 'block';
+  bd.style.display = open ? 'none' : 'block';
+  const dir = item.querySelector('.traj-dir');
+  if(dir) dir.textContent = dir.textContent.replace(open ? '▴' : '▾', open ? '▾' : '▴');
+}
+
+// Body Timeline
+const months = ['Dec','Jan','Feb','Mar','Apr','May'];
+const systems = [
+  {name:'Inflammation', data:[2,2,1,1,2,2]},
+  {name:'Skin', data:[1,1,0,0,0,0]},
+  {name:'Recovery', data:[2,1,1,1,0,0]},
+  {name:'Metabolic', data:[1,1,1,2,2,2]},
+  {name:'Movement', data:[1,1,1,1,1,1]},
+];
+const colors = {0:'var(--green)',1:'var(--border)',2:'var(--red)'};
+
+const mRow = document.getElementById('tl-months');
+months.forEach((m,i) => {
+  const d = document.createElement('div');
+  d.className = 'tl-month' + (i===5?' now':'');
+  d.textContent = m;
+  mRow.appendChild(d);
+});
+
+const tRow = document.getElementById('tl-track');
+systems.forEach(sys => {
+  const row = document.createElement('div');
+  row.className = 'tl-row';
+  const label = document.createElement('div');
+  label.className = 'tl-name';
+  label.textContent = sys.name;
+  row.appendChild(label);
+  const dots = document.createElement('div');
+  dots.className = 'tl-dots';
+  sys.data.forEach(v => {
+    const d = document.createElement('div');
+    d.className = 'tl-dot';
+    d.style.background = colors[v];
+    dots.appendChild(d);
+  });
+  row.appendChild(dots);
+  tRow.appendChild(row);
+});
+</script>
+</body>
+</html>
